@@ -5,16 +5,19 @@ import { archiveMessages, archivedCount } from "./msg/archive-messages.js"
 export interface MessageCleanerClientProps {
   Cookie: string
   TradeOnly?: boolean
+  RequestInterval?: number
 }
 
 export class MessageCleanerClient {
+  page: number
   cookie: string
   tradeOnly?: boolean
-  page: number
+  requestInterval: number
 
   constructor(props: MessageCleanerClientProps) {
     this.cookie = props.Cookie
     this.tradeOnly = props.TradeOnly
+    this.requestInterval = props.RequestInterval || 0.5
     this.page = 0
   }
 
@@ -34,9 +37,12 @@ export class MessageCleanerClient {
     let ignoredCount = 0
     for (const message of inboxData.Collection) {
       if (
-        this.tradeOnly === true &&
         !message.subject.includes("You have a Trade request from ") &&
-        !message.subject.includes("Your trade with ")
+        !message.subject.includes("Your trade with ") &&
+        !message.subject.includes(" has countered your Trade") &&
+        !message.subject.includes(" could not be completed.") &&
+        !message.subject.includes(" completed!") &&
+        this.tradeOnly === true
       ) {
         ignoredCount++
         continue
@@ -61,15 +67,8 @@ export class MessageCleanerClient {
   }
 
   public archiveAll = async () => {
-    while (true) {
-      const archivedMessages = (await this.archivePage()) as number
-
-      if (archivedMessages === 0) {
-        this.page++
-        console.log(
-          chalk.yellow(`No messages to archive. Moving to page: ${this.page}`)
-        )
-      }
-    }
+    setInterval(async () => {
+      this.archivePage()
+    }, this.requestInterval * 1000)
   }
 }

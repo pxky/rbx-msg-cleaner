@@ -15,5 +15,11 @@ export const getInboxPage = async (cookie: string, page: number) => {
         Page: res.data.pageNumber,
       }
     })
-    .catch((err) => console.error(err))
+    .catch((err) => {
+      if (err.response.status === 500) {
+        console.error("Sending too many requests!")
+      } else {
+        console.error(err)
+      }
+    })
 }
